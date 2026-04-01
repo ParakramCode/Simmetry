@@ -1,0 +1,36 @@
+# ===== Week 1: Telemetry Listener =====
+pyaccsharedmemory>=0.2.0       # ACC shared memory reference
+pyarrow>=15.0.0                 # Parquet file support
+pandas>=2.2.0                   # Data manipulation
+pydantic>=2.6.0                 # Schema validation
+
+# ===== Week 2: Kafka =====
+confluent-kafka>=2.3.0          # Kafka producer/consumer
+# kafka-python>=2.0.2           # Alternative Kafka client
+
+# ===== Week 3: Spark =====
+pyspark>=3.5.0                  # Spark Structured Streaming
+
+# ===== Week 4: Storage =====
+sqlalchemy>=2.0.0               # ORM for PostgreSQL
+psycopg2-binary>=2.9.9          # PostgreSQL driver
+duckdb>=1.1.0                   # Query bridge (Parquet + PostgreSQL)
+alembic>=1.13.0                 # Database migrations
+
+# ===== Week 5: Dashboard =====
+streamlit>=1.40.0               # Dashboard UI
+plotly>=5.22.0                  # Interactive charts
+altair>=5.2.0                   # Declarative charts
+
+# ===== Week 6: AI Agent =====
+anthropic>=0.42.0               # Claude API
+# openai>=1.12.0                # Alternative LLM
+
+# ===== Testing =====
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+
+# ===== Utilities =====
+python-dotenv>=1.0.0            # Environment variable management
+loguru>=0.7.0                   # Structured logging
+rich>=13.7.0                    # Pretty terminal output

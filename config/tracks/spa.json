@@ -1,0 +1,77 @@
+{
+    "track_name": "Spa-Francorchamps",
+    "track_id": "spa",
+    "track_length_m": 7004,
+    "sector_count": 3,
+    "sector_boundaries_m": [
+        0,
+        2310,
+        4720,
+        7004
+    ],
+    "corners": {
+        "T1_La_Source": {
+            "entry_m": 180,
+            "apex_m": 230,
+            "exit_m": 300,
+            "braking_zone_start_m": 100,
+            "typical_speed_range_kmh": [60, 80]
+        },
+        "T3_Eau_Rouge": {
+            "entry_m": 580,
+            "apex_m": 640,
+            "exit_m": 720,
+            "braking_zone_start_m": null,
+            "typical_speed_range_kmh": [250, 285]
+        },
+        "T4_Raidillon": {
+            "entry_m": 720,
+            "apex_m": 800,
+            "exit_m": 900,
+            "braking_zone_start_m": null,
+            "typical_speed_range_kmh": [210, 255]
+        },
+        "T7_Les_Combes": {
+            "entry_m": 1960,
+            "apex_m": 2050,
+            "exit_m": 2130,
+            "braking_zone_start_m": 1850,
+            "typical_speed_range_kmh": [90, 120]
+        },
+        "T10_Pouhon": {
+            "entry_m": 3000,
+            "apex_m": 3180,
+            "exit_m": 3350,
+            "braking_zone_start_m": 2900,
+            "typical_speed_range_kmh": [170, 210]
+        },
+        "T12_Fagnes": {
+            "entry_m": 3750,
+            "apex_m": 3850,
+            "exit_m": 3950,
+            "braking_zone_start_m": 3650,
+            "typical_speed_range_kmh": [130, 160]
+        },
+        "T14_Stavelot": {
+            "entry_m": 4150,
+            "apex_m": 4280,
+            "exit_m": 4400,
+            "braking_zone_start_m": 4050,
+            "typical_speed_range_kmh": [140, 170]
+        },
+        "T15_Blanchimont": {
+            "entry_m": 5300,
+            "apex_m": 5500,
+            "exit_m": 5700,
+            "braking_zone_start_m": null,
+            "typical_speed_range_kmh": [250, 275]
+        },
+        "T19_Bus_Stop": {
+            "entry_m": 6350,
+            "apex_m": 6500,
+            "exit_m": 6650,
+            "braking_zone_start_m": 6200,
+            "typical_speed_range_kmh": [75, 100]
+        }
+    }
+}

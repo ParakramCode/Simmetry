@@ -1,0 +1,70 @@
+{
+    "track_name": "Monza",
+    "track_id": "monza",
+    "track_length_m": 5793,
+    "sector_count": 3,
+    "sector_boundaries_m": [
+        0,
+        2060,
+        4150,
+        5793
+    ],
+    "corners": {
+        "T1_Rettifilo": {
+            "entry_m": 270,
+            "apex_m": 310,
+            "exit_m": 370,
+            "braking_zone_start_m": 230,
+            "typical_speed_range_kmh": [70, 85]
+        },
+        "T2_Variante_della_Roggia": {
+            "entry_m": 370,
+            "apex_m": 430,
+            "exit_m": 490,
+            "braking_zone_start_m": 340,
+            "typical_speed_range_kmh": [60, 75]
+        },
+        "T3_Curva_Grande": {
+            "entry_m": 700,
+            "apex_m": 820,
+            "exit_m": 950,
+            "braking_zone_start_m": 680,
+            "typical_speed_range_kmh": [200, 240]
+        },
+        "T4_Variante_della_Roggia_2": {
+            "entry_m": 1400,
+            "apex_m": 1460,
+            "exit_m": 1520,
+            "braking_zone_start_m": 1340,
+            "typical_speed_range_kmh": [70, 90]
+        },
+        "T5_Lesmo_1": {
+            "entry_m": 1980,
+            "apex_m": 2060,
+            "exit_m": 2130,
+            "braking_zone_start_m": 1920,
+            "typical_speed_range_kmh": [140, 170]
+        },
+        "T6_Lesmo_2": {
+            "entry_m": 2250,
+            "apex_m": 2330,
+            "exit_m": 2400,
+            "braking_zone_start_m": 2190,
+            "typical_speed_range_kmh": [130, 155]
+        },
+        "T8_Ascari": {
+            "entry_m": 3400,
+            "apex_m": 3520,
+            "exit_m": 3640,
+            "braking_zone_start_m": 3320,
+            "typical_speed_range_kmh": [140, 165]
+        },
+        "T11_Parabolica": {
+            "entry_m": 4700,
+            "apex_m": 4900,
+            "exit_m": 5100,
+            "braking_zone_start_m": 4620,
+            "typical_speed_range_kmh": [130, 160]
+        }
+    }
+}
