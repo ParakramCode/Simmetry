@@ -21,7 +21,7 @@ from loguru import logger
 
 from .acc_reader import ACCReader
 from .session_manager import SessionManager
-from .telemetry_publisher import CSVTelemetryPublisher
+from .kafka_publisher import KafkaTelemetryPublisher
 from .lap_segmenter import LapSegmenter
 from config.settings import POLLING_INTERVAL_S, POLLING_RATE_HZ
 
@@ -53,7 +53,7 @@ def main():
     # Initialize components
     reader = ACCReader()
     session_mgr = SessionManager()
-    publisher = CSVTelemetryPublisher()
+    publisher = KafkaTelemetryPublisher()
     segmenter = None  # Created per session
     
     # Wire up session manager events → publisher + segmenter
