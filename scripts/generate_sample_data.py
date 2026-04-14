@@ -24,6 +24,9 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+# Fix Windows console encoding for emoji output
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 

@@ -9,6 +9,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+# ─── Deployment Mode ──────────────────────────────────────────
+# Set to "aws" to route telemetry to cloud services,
+# "local" to keep the original Kafka + local Parquet behavior.
+DEPLOYMENT_MODE = os.getenv("DEPLOYMENT_MODE", "local")  # "local" | "aws"
+
 # ─── Project Paths ──────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
@@ -59,6 +65,16 @@ KAFKA_TOPICS = {
 }
 
 
+# ─── AWS ───────────────────────────────────────────────────────
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+S3_BUCKET = os.getenv("S3_BUCKET", "sim-telemetry-lake")
+S3_RAW_PREFIX = os.getenv("S3_RAW_PREFIX", "raw/")
+S3_PROCESSED_PREFIX = os.getenv("S3_PROCESSED_PREFIX", "processed/")
+FIREHOSE_STREAM_NAME = os.getenv("FIREHOSE_STREAM_NAME", "telemetry-firehose")
+ATHENA_DATABASE = os.getenv("ATHENA_DATABASE", "sim_telemetry")
+ATHENA_RESULTS_BUCKET = os.getenv("ATHENA_RESULTS_BUCKET", f"s3://{S3_BUCKET}/athena-results/")
+
+
 # ─── PostgreSQL ────────────────────────────────────────────────
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
 POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
@@ -91,6 +107,16 @@ def get_parquet_path(platform: str, track: str, car: str, session_id: str, lap_n
     path = TELEMETRY_DIR / platform / track_safe / car_safe / session_id / f"lap_{lap_number:03d}.parquet"
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def get_s3_parquet_key(platform: str, track: str, car: str, session_id: str, lap_number: int) -> str:
+    """
+    Build the S3 object key for a given lap's Parquet file.
+    Convention: processed/{platform}/{track}/{car}/{session_id}/lap_{NNN}.parquet
+    """
+    car_safe = car.replace(" ", "_")
+    track_safe = track.replace(" ", "_")
+    return f"{S3_PROCESSED_PREFIX}{platform}/{track_safe}/{car_safe}/{session_id}/lap_{lap_number:03d}.parquet"
 
 
 # ─── Session ID Generation ────────────────────────────────────
