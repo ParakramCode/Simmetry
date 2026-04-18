@@ -276,6 +276,19 @@ class AthenaClient:
             ORDER BY session_start DESC
         """)
 
+    def get_available_laps(self, session_id: str) -> list[int]:
+        """Get a list of laps that have telemetry data for the session."""
+        df = self.query(f"""
+            SELECT DISTINCT completed_laps 
+            FROM telemetry_raw 
+            WHERE session_id = '{session_id}' 
+              AND status = 'live'
+              AND completed_laps IS NOT NULL
+            ORDER BY completed_laps
+        """)
+        # Athena/Wrangler returns nullable pandas integers (Int64), so convert safely
+        return [int(x) for x in df['completed_laps'].tolist()] if not df.empty else []
+
     def get_lap_data(self, session_id: str, lap_number: int) -> pd.DataFrame:
         """Get full telemetry for a specific lap."""
         return self.query(f"""
