@@ -209,7 +209,7 @@ class AthenaClient:
         LOCATION 's3://{S3_BUCKET}/{S3_PROCESSED_PREFIX}telemetry/'
         """
         self._run_ddl(processed_ddl)
-        logger.info("✅ Table 'telemetry_processed' created")
+        logger.info("Table 'telemetry_processed' created")
 
         # ── Lap summary table ──
         summary_ddl = f"""
@@ -234,7 +234,7 @@ class AthenaClient:
         LOCATION 's3://{S3_BUCKET}/{S3_PROCESSED_PREFIX}lap_summary/'
         """
         self._run_ddl(summary_ddl)
-        logger.info("✅ Table 'lap_summary' created")
+        logger.info(" Table 'lap_summary' created")
 
     def query(self, sql: str) -> pd.DataFrame:
         """
@@ -256,7 +256,7 @@ class AthenaClient:
     def repair_table(self, table_name: str):
         """Run MSCK REPAIR TABLE to discover new partitions (for partitioned tables)."""
         self._run_ddl(f"MSCK REPAIR TABLE {self._database}.{table_name}")
-        logger.info(f"✅ Repaired partitions for '{table_name}'")
+        logger.info(f" Repaired partitions for '{table_name}'")
 
     def get_sessions(self) -> pd.DataFrame:
         """Get a list of all sessions with basic stats."""
