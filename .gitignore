@@ -52,3 +52,6 @@ logs/
 *.txt
 !requirements.txt
 
+# Documentation & Reports
+*.md
+!README.md

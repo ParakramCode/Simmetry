@@ -152,7 +152,7 @@ df = client.query("SELECT AVG(speed_kmh), track FROM telemetry_raw GROUP BY trac
 | Serving DB | PostgreSQL | Amazon Athena |
 | Query Bridge | DuckDB | awswrangler |
 | AI Agent | Claude API (tool calling) | Same |
-| Dashboard | Streamlit (local) | Streamlit (EC2) |
+| Dashboard | Streamlit (local) | Streamlit (EC2) / Power BI (via Athena ODBC) |
 
 ## License
 
