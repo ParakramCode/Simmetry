@@ -4,8 +4,8 @@ Telemetry Listener — Main entry point.
 Starts the 30Hz polling loop that:
   1. Reads ACC shared memory
   2. Feeds snapshots to the SessionManager (for event detection)
-  3. Publishes to Kafka (local mode) or AWS Firehose + S3 (aws mode)
-  4. Writes per-lap Parquet files via LapSegmenter (local) or S3 (aws)
+  3. Publishes to AWS Firehose + S3
+  4. Writes per-lap Parquet files to S3 via Firehose/Glue
 
 Usage:
     python -m src.listener.main
@@ -21,7 +21,7 @@ from loguru import logger
 
 from .acc_reader import ACCReader
 from .session_manager import SessionManager
-from config.settings import POLLING_INTERVAL_S, POLLING_RATE_HZ, DEPLOYMENT_MODE
+from config.settings import POLLING_INTERVAL_S, POLLING_RATE_HZ
 
 
 def setup_logging():
@@ -41,15 +41,10 @@ def setup_logging():
 
 
 def _create_publisher():
-    """Create the appropriate publisher based on DEPLOYMENT_MODE."""
-    if DEPLOYMENT_MODE == "aws":
-        from .aws_publisher import AWSPublisher
-        logger.info("☁️  Deployment mode: AWS (Firehose + S3)")
-        return AWSPublisher()
-    else:
-        from .kafka_publisher import KafkaTelemetryPublisher
-        logger.info("🖥️  Deployment mode: Local (Kafka)")
-        return KafkaTelemetryPublisher()
+    """Create the AWS publisher."""
+    from .aws_publisher import AWSPublisher
+    logger.info("☁️  Deployment mode: AWS (Firehose + S3)")
+    return AWSPublisher()
 
 
 def main():
@@ -58,7 +53,7 @@ def main():
     logger.info("=" * 60)
     logger.info("🏎️  ACC Telemetry Listener — Starting")
     logger.info(f"   Polling rate: {POLLING_RATE_HZ}Hz ({POLLING_INTERVAL_S*1000:.1f}ms)")
-    logger.info(f"   Mode: {DEPLOYMENT_MODE.upper()}")
+    logger.info("   Mode: AWS")
     logger.info("=" * 60)
     
     # Initialize components
@@ -66,27 +61,16 @@ def main():
     session_mgr = SessionManager()
     publisher = _create_publisher()
     
-    # In AWS mode, the AWSPublisher handles Parquet internally — no separate segmenter.
-    # In local mode, we still use LapSegmenter for per-lap Parquet files.
-    use_local_segmenter = DEPLOYMENT_MODE != "aws"
-    segmenter = None  # Created per session (local mode only)
+    # AWSPublisher handles Parquet internally — no separate segmenter needed.
     
-    # Wire up session manager events → publisher + segmenter
+    # Wire up session manager events → publisher
     def on_session_start(event):
-        nonlocal segmenter
         publisher.start_session(event.session_id)
         publisher.write_session_event(event)
-        if use_local_segmenter:
-            from .lap_segmenter import LapSegmenter
-            segmenter = LapSegmenter(session_id=event.session_id, platform="ACC")
     
     def on_session_end(event):
-        nonlocal segmenter
         publisher.write_session_event(event)
         publisher.end_session()
-        if segmenter:
-            segmenter.close()
-            segmenter = None
         reader.refresh_static()  # Force re-read static on next session
     
     session_mgr.on_session_start(on_session_start)
@@ -139,8 +123,6 @@ def main():
             # Write raw telemetry if session is active
             if session_mgr.is_session_active:
                 publisher.write_telemetry(snapshot)
-                if use_local_segmenter and segmenter:
-                    segmenter.add_sample(snapshot)
                 total_reads += 1
             
             # Print stats every 10 seconds
@@ -169,8 +151,6 @@ def main():
         if session_mgr.is_session_active:
             logger.info("Closing active session...")
             publisher.end_session()
-            if segmenter:
-                segmenter.close()
         
         reader.close()
         publisher.close()

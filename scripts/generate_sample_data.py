@@ -31,7 +31,45 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config.settings import RAW_DATA_DIR, SAMPLE_DATA_DIR
-from src.listener.telemetry_publisher import TELEMETRY_COLUMNS
+
+TELEMETRY_COLUMNS = [
+    # Identity / timing
+    "timestamp_wall", "timestamp_game",
+    "car", "track", "session_type", "status",
+    
+    # Lap info
+    "completed_laps", "current_lap_time_ms", "last_lap_time_ms",
+    "best_lap_time_ms", "distance_into_lap", "normalized_position",
+    "current_sector", "last_sector_time_ms", "is_valid_lap",
+    "is_in_pit", "is_in_pit_lane",
+    
+    # Inputs
+    "throttle", "brake", "steering", "clutch",
+    
+    # Dynamics
+    "speed_kmh", "gear", "rpm", "fuel_remaining", "fuel_per_lap",
+    
+    # G-forces
+    "g_lat", "g_lon", "g_vert",
+    
+    # Tyres — flattened from WheelData
+    "tyre_pressure_fl", "tyre_pressure_fr", "tyre_pressure_rl", "tyre_pressure_rr",
+    "tyre_temp_fl", "tyre_temp_fr", "tyre_temp_rl", "tyre_temp_rr",
+    "tyre_inner_temp_fl", "tyre_inner_temp_fr", "tyre_inner_temp_rl", "tyre_inner_temp_rr",
+    "tyre_middle_temp_fl", "tyre_middle_temp_fr", "tyre_middle_temp_rl", "tyre_middle_temp_rr",
+    "tyre_outer_temp_fl", "tyre_outer_temp_fr", "tyre_outer_temp_rl", "tyre_outer_temp_rr",
+    "tyre_slip_fl", "tyre_slip_fr", "tyre_slip_rl", "tyre_slip_rr",
+    "suspension_travel_fl", "suspension_travel_fr", "suspension_travel_rl", "suspension_travel_rr",
+    "brake_temp_fl", "brake_temp_fr", "brake_temp_rl", "brake_temp_rr",
+    "tyre_wear_fl", "tyre_wear_fr", "tyre_wear_rl", "tyre_wear_rr",
+    
+    # Car settings
+    "tc_level", "tc_cut", "abs_level", "engine_map", "brake_bias",
+    
+    # Environment
+    "air_temp", "road_temp", "track_grip", "rain_intensity",
+    "wind_speed", "wind_direction",
+]
 
 
 # ═══════════════════════════════════════════════════════════════

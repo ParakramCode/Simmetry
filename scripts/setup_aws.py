@@ -205,7 +205,6 @@ def main():
     print()
     print("Next steps:")
     print(f"  1. Update your .env file:")
-    print(f"     DEPLOYMENT_MODE=aws")
     print(f"     S3_BUCKET={S3_BUCKET}")
     print(f"     FIREHOSE_STREAM_NAME={FIREHOSE_STREAM_NAME}")
     print()
@@ -216,7 +215,7 @@ def main():
     print(f"  3. Create Athena tables:")
     print(f'     python -c "from src.storage.athena_client import AthenaClient; AthenaClient().create_tables()"')
     print()
-    print(f"  4. Start the listener in AWS mode:")
+    print(f"  4. Start the listener:")
     print(f"     python -m src.listener.main")
     print(f"{'='*60}")
 

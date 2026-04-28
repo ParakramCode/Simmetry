@@ -232,132 +232,7 @@ def _style_axes(fig, rows=1, cols=1, x_title=None):
             fig.update_xaxes(title_text=x_title, row=rows, col=1)
 
 
-# ─── Data Source Detection ───────────────────────────────────────────────
-# Try Athena first; fall back to local CSV/Parquet when AWS is unreachable.
-
-DATA_ROOT = Path(__file__).parent.parent.parent / "data"
-RAW_DATA_ROOT = DATA_ROOT / "raw"
-TELEMETRY_ROOT = DATA_ROOT / "telemetry"
-
-_USE_LOCAL: bool | None = None   # resolved once on first call
-
-
-def _is_local_mode() -> bool:
-    """
-    Determine data source.  Use local when:
-      - DEPLOYMENT_MODE env var is NOT 'aws', OR
-      - AthenaClient cannot be instantiated (missing awswrangler, no creds, etc.)
-    Falls back to local automatically so the dashboard always loads.
-    """
-    global _USE_LOCAL
-    if _USE_LOCAL is not None:
-        return _USE_LOCAL
-
-    import os
-    if os.getenv("DEPLOYMENT_MODE", "local") != "aws":
-        # Explicitly local or unset → skip the slow AWS connectivity probe
-        _USE_LOCAL = True
-        return True
-
-    # DEPLOYMENT_MODE=aws → attempt Athena
-    try:
-        client = AthenaClient()
-        client.query("SELECT 1 AS is_online")
-        _USE_LOCAL = False
-    except Exception:
-        _USE_LOCAL = True
-    return _USE_LOCAL
-
-
-# ─── Local-data helpers ─────────────────────────────────────────────────
-
-@st.cache_data
-def _load_local_csv() -> pd.DataFrame:
-    """Load the first available raw CSV telemetry file."""
-    for session_dir in sorted(RAW_DATA_ROOT.iterdir()):
-        csv_path = session_dir / "telemetry.csv"
-        if csv_path.exists():
-            df = pd.read_csv(csv_path)
-            df["session_id"] = session_dir.name
-            return df
-    return pd.DataFrame()
-
-
-@st.cache_data
-def _get_local_sessions() -> pd.DataFrame:
-    """Build a sessions DataFrame from whatever local data dirs exist."""
-    rows = []
-    # Check raw CSV dirs
-    if RAW_DATA_ROOT.exists():
-        for d in sorted(RAW_DATA_ROOT.iterdir()):
-            csv_path = d / "telemetry.csv"
-            if csv_path.exists():
-                df = pd.read_csv(csv_path, nrows=500)
-                rows.append({
-                    "session_id": d.name,
-                    "car": df["car"].iloc[0] if "car" in df.columns else "Unknown",
-                    "track": df["track"].iloc[0] if "track" in df.columns else "Unknown",
-                    "session_type": df["session_type"].iloc[0] if "session_type" in df.columns else "practice",
-                    "total_laps": int(df["completed_laps"].max()) if "completed_laps" in df.columns else 0,
-                    "session_start": df["timestamp_wall"].min() if "timestamp_wall" in df.columns else "",
-                    "session_end": df["timestamp_wall"].max() if "timestamp_wall" in df.columns else "",
-                    "avg_speed": float(df["speed_kmh"].mean()) if "speed_kmh" in df.columns else 0,
-                })
-    if not rows:
-        return pd.DataFrame()
-    return pd.DataFrame(rows)
-
-
-@st.cache_data
-def _get_local_available_laps(session_id: str) -> list[int]:
-    """Discover available lap numbers from local data."""
-    csv_path = RAW_DATA_ROOT / session_id / "telemetry.csv"
-    if csv_path.exists():
-        df = pd.read_csv(csv_path, usecols=["completed_laps", "status"])
-        df = df[df["status"] == "live"]
-        return sorted(df["completed_laps"].dropna().unique().astype(int).tolist())
-    return []
-
-
-@st.cache_data
-def _get_local_lap_data(session_id: str, lap: int) -> pd.DataFrame:
-    """Load a single lap from local CSV."""
-    csv_path = RAW_DATA_ROOT / session_id / "telemetry.csv"
-    if csv_path.exists():
-        df = pd.read_csv(csv_path)
-        df = df[(df["completed_laps"] == lap) & (df["status"] == "live")]
-        df = df.sort_values("distance_into_lap")
-        return df
-    return pd.DataFrame()
-
-
-@st.cache_data
-def _get_local_multi_lap_summary(session_id: str) -> pd.DataFrame:
-    """Compute per-lap summary stats from local CSV."""
-    csv_path = RAW_DATA_ROOT / session_id / "telemetry.csv"
-    if not csv_path.exists():
-        return pd.DataFrame()
-
-    df = pd.read_csv(csv_path)
-    df = df[(df["status"] == "live") & df["completed_laps"].notna()]
-
-    summary = df.groupby("completed_laps").agg(
-        max_speed=("speed_kmh", "max"),
-        avg_speed=("speed_kmh", "mean"),
-        lap_time_ms=("current_lap_time_ms", "max"),
-        avg_temp_fl=("tyre_temp_fl", "mean"),
-        avg_temp_fr=("tyre_temp_fr", "mean"),
-        avg_temp_rl=("tyre_temp_rl", "mean"),
-        avg_temp_rr=("tyre_temp_rr", "mean"),
-        avg_fuel=("fuel_remaining", "mean"),
-        min_fuel=("fuel_remaining", "min"),
-        avg_brake_bias=("brake_bias", "mean"),
-        sample_count=("speed_kmh", "count"),
-    ).reset_index()
-    return summary.sort_values("completed_laps")
-
-
-# ─── Unified data API (auto-selects Athena vs Local) ────────────────────
+# ─── Data API (Athena) ──────────────────────────────────────────────────
 
 @st.cache_resource
 def get_athena_client():
@@ -367,46 +242,38 @@ def get_athena_client():
 
 @st.cache_data(ttl=300)
 def fetch_sessions():
-    """Fetch all available sessions — Athena or local."""
-    if _is_local_mode():
-        return _get_local_sessions()
+    """Fetch all available sessions from Athena."""
     client = get_athena_client()
     try:
         return client.get_sessions()
     except Exception as e:
-        st.error(f"Athena query failed, falling back to local data. Error: {e}")
-        return _get_local_sessions()
+        st.error(f"Athena query failed. Error: {e}")
+        return pd.DataFrame()
 
 
 @st.cache_data(ttl=300)
 def fetch_lap_data(session_id: str, lap: int):
     """Fetch 30Hz telemetry data for a specific lap."""
-    if _is_local_mode():
-        return _get_local_lap_data(session_id, lap)
     client = get_athena_client()
     try:
         return client.get_lap_data(session_id, lap)
     except Exception:
-        return _get_local_lap_data(session_id, lap)
+        return pd.DataFrame()
 
 
 @st.cache_data(ttl=300)
 def fetch_available_laps(session_id: str):
     """Fetch actual available lap numbers from the data lake."""
-    if _is_local_mode():
-        return _get_local_available_laps(session_id)
     client = get_athena_client()
     try:
         return client.get_available_laps(session_id)
     except Exception:
-        return _get_local_available_laps(session_id)
+        return []
 
 
 @st.cache_data(ttl=300)
 def fetch_multi_lap_summary(session_id: str):
     """Fetch summary-level stats for all laps in a session."""
-    if _is_local_mode():
-        return _get_local_multi_lap_summary(session_id)
     client = get_athena_client()
     try:
         return client.query(f"""
@@ -431,7 +298,7 @@ def fetch_multi_lap_summary(session_id: str):
             ORDER BY completed_laps
         """)
     except Exception:
-        return _get_local_multi_lap_summary(session_id)
+        return pd.DataFrame()
 
 
 # ─────────────────────────────────────────────────────────────────────────
