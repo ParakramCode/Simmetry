@@ -1,0 +1,47 @@
+# 🏎️ Simmetry Architecture: How The Data Flows
+
+To thoroughly understand the streaming and storage infrastructure we just built, it's highly recommended to read through the files in **the exact order the data travels** from the racing wheel to the database.
+
+Here is your sequential reading guide:
+
+---
+
+### Step 1: The Configs
+Before looking at any code, understand *what* we are connecting to.
+1. `docker-compose.yml` 
+   - **Look for:** How Zookeeper, Kafka, and PostgreSQL are networked.
+2. `config/settings.py`
+   - **Look for:** The exact names of the 4 Kafka topics (`telemetry_raw`, `session_events`, `lap_completions`, `setup_snapshots`) and the `DATABASE_URL` structure.
+
+---
+
+### Step 2: Extract & Publish (The Listener)
+This is where the live game data turns into network events. Think of this as the "Send" phase.
+3. `src/listener/acc_reader.py`
+   - **Look for:** How we map C-structures from the game's memory into Python dictionaries at 60Hz.
+4. `src/listener/kafka_publisher.py`
+   - **Look for:** The `_flatten_snapshot()` method. This is critical. See how it strips the nested wheel structures down into flat keys (e.g. `tyre_temp_fl`) so it's easier to query later. See how the `Producer` ships that JSON to the correct topics.
+5. `src/listener/main.py`
+   - **Look for:** The 30/60Hz polling loop. It instantiates the reader, detects events, and passes the flattened snapshot iteratively to the Kafka Publisher.
+
+---
+
+### Step 3: Big Data Streaming (Spark & Parquet)
+This is where the massive, raw 60Hz feed is offloaded from Kafka onto disk as fast as possible.
+6. `src/streaming/spark_processor.py`
+   - **Look for:** The concept of *Lazy Evaluation*. The `.readStream()` configures the blueprint, the `schema` array defines the boundaries, but nothing happens until `.writeStream()` is called at the very end to partition the Parquet files by `session_id`.
+
+---
+
+### Step 4: Structuring Analytics (PostgreSQL)
+While Parquet is best for 60Hz granular traces, relational Postgres is best for analytics algorithms comparing laps and setups.
+7. `src/storage/db.py`
+   - **Look for:** The SQLAlchemy `DeclarativeBase`. Analyze how `sessions`, `laps`, and `setup_snapshots` are structured out via Foreign Keys.
+8. `alembic/env.py`
+   - **Look for:** Lines 10-14 where we override the config to securely pass `DATABASE_URL` and hand Alembic the `target_metadata = Base.metadata` so it can auto-generate the database tables based purely on your `db.py` file.
+
+---
+
+### Step 5: Tying it together (The Consumer)
+9. `src/streaming/postgres_consumer.py`
+   - **Look for:** The infinite loop listening to the slower Kafka topics (the session start/ends, the lap cross-overs). Notice how it decodes the payload, figures out which SQL Table model needs the data based on the topic name, and runs `db.commit()` to sync it instantly to PostgreSQL.
